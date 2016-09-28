@@ -5,12 +5,14 @@
 #include "mat4.h"
 #include "LoadObj.h"
 #include <vector>
+#include <algorithm>
 
 int g_gl_width = 640;
 int g_gl_height = 480;
 
 std::string cows = "triangulatedCowDos.obj";
 std::string people = "Body_Mesh_Rigged.obj";
+std::string file = cows;
 
 GLFWwindow* g_window = NULL;
 
@@ -91,8 +93,8 @@ int main() {
 
 	GLuint model_mat = glGetUniformLocation(shader_programme, "model_mat");
 
-	std::vector<vec3> points = load_obj_vertices(cows);
-	std::vector<vec3> normals = load_obj_normals(cows);
+	std::vector<vec3> points = load_obj_vecs(VERTEX, file);
+	std::vector<vec3> normals = load_obj_vecs(NORMAL, file);
 
 	GLuint entity_vao = 0;
 	glGenVertexArrays(1, &entity_vao);
@@ -115,7 +117,7 @@ int main() {
 	float angle = 0.0;
 
 	float x = 0.0;
-	float y = -0.5;
+	float y = -0.82;
 	float z = 0.0;
 
 	vec3 entity_positions[] = {
@@ -125,9 +127,9 @@ int main() {
 	};
 
 	float entity_rotations[] = {
-		0.0,
-		0.0,
-		0.0
+		270.0,
+		30.0,
+		60.0
 	};
 
 	int entity = 1;
@@ -154,25 +156,22 @@ int main() {
 		glUniformMatrix4fv(model_mat, 1, GL_TRUE, getRotY(angle).mat);
 
 		glUniform3f(color, 0.75, 0.75, 0.75);
-
 		glBindVertexArray(plane_vao);
 		glDrawArrays(GL_TRIANGLES, 0, pointCount);
 
 		glUniform3f(color, 0.75, 0.0, 0.75);
-
-		glUniformMatrix4fv(model_mat, 1, GL_TRUE, (getRotY(angle) * getTranslation(entity_positions[0]) * getRotY(entity_rotations[0]) * scale_mat(0.05)).mat);
+		glUniformMatrix4fv(model_mat, 1, GL_TRUE, (getRotY(angle) * getTranslation(entity_positions[0]) * getRotY(entity_rotations[0]) * scale_mat(0.025)).mat);
 		glBindVertexArray(entity_vao);
-
 		glDrawArrays(GL_TRIANGLES, 0, points.size());
 
+		glUniform3f(color, 0.75, 0.9, 0.75);
 		glUniformMatrix4fv(model_mat, 1, GL_TRUE, (getRotY(angle) * getTranslation(entity_positions[1]) * getRotY(entity_rotations[1]) * scale_mat(0.05)).mat);
 		glBindVertexArray(entity_vao);
-
 		glDrawArrays(GL_TRIANGLES, 0, points.size());
 
+		glUniform3f(color, 0.5, 0.0, 0.75);
 		glUniformMatrix4fv(model_mat, 1, GL_TRUE, (getRotY(angle) * getTranslation(entity_positions[2]) * getRotY(entity_rotations[2]) * scale_mat(0.05)).mat);
 		glBindVertexArray(entity_vao);
-
 		glDrawArrays(GL_TRIANGLES, 0, points.size());
 
 		glfwPollEvents();
@@ -182,32 +181,32 @@ int main() {
 		}
 
 		if (glfwGetKey(g_window, GLFW_KEY_D)) {
-			entity_positions[entity - 1].x += 0.01;
+			entity_positions[entity - 1].x = std::min(entity_positions[entity - 1].x + 0.01, 1.0);
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_A)) {
-			entity_positions[entity - 1].x -= 0.01;
+			entity_positions[entity - 1].x = std::max(entity_positions[entity - 1].x - 0.01, -1.0);
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_W)) {
+			entity_positions[entity - 1].z = std::min(entity_positions[entity - 1].z + 0.01, 1.0);
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_S)) {
+			entity_positions[entity - 1].z = std::max(entity_positions[entity - 1].z - 0.01, -1.0);
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_UP)) {
-			entity_positions[entity - 1].y += 0.01;
+			entity_positions[entity - 1].y = std::min(entity_positions[entity - 1].y + 0.01, 1.0);
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_DOWN)) {
-			entity_positions[entity - 1].y -= 0.01;
+			entity_positions[entity - 1].y = std::max(entity_positions[entity - 1].y - 0.01, -1.0);
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_LEFT)) {
-			entity_rotations[entity - 1] += 1.0;
+			entity_rotations[entity - 1] += 2.0;
 			if (entity_rotations[entity - 1] >= 360.0)
 				entity_rotations[entity - 1] = 0.0;
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_RIGHT)) {
-			entity_rotations[entity - 1] -= 1.0;
+			entity_rotations[entity - 1] -= 2.0;
 			if (entity_rotations[entity - 1] <= 0.0)
 				entity_rotations[entity - 1] = 360.0;
-		}
-		if (glfwGetKey(g_window, GLFW_KEY_W)) {
-			entity_positions[entity - 1].z += 0.01;
-		}
-		if (glfwGetKey(g_window, GLFW_KEY_S)) {
-			entity_positions[entity - 1].z -= 0.01;
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_1)) {
 			entity = 1;
@@ -226,4 +225,3 @@ int main() {
 	glfwTerminate();
 	return 0;
 }
-

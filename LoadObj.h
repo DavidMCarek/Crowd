@@ -5,5 +5,5 @@
 #include "vec3.h"
 #include <vector>
 
-std::vector<vec3> load_obj_vertices(std::string file);
-std::vector<vec3> load_obj_normals(std::string file);
+enum vec_type {VERTEX, NORMAL};
+std::vector<vec3> load_obj_vecs(vec_type type, std::string file);

@@ -1,4 +1,4 @@
-#include "LoadObj.h"
+#include "loadObj.h"
 #include "strUtils.h"
 
 std::vector<vec3> load_obj_vecs(vec_type type, std::string file) {

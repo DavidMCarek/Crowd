@@ -45,7 +45,7 @@ void glfw_window_size_callback(GLFWwindow* window, int width, int height) {
 	printf("width %i height %i\n", width, height);
 }
 
-void _update_fps_counter (GLFWwindow* window) {
+void update_fps_counter (GLFWwindow* window) {
 	static double previous_seconds = glfwGetTime ();
 	static int frame_count;
 	double current_seconds = glfwGetTime ();

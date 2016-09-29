@@ -1,7 +1,4 @@
-#define _USE_MATH_DEFINES
 #include "mat4.h"
-#include <math.h>
-
 
 mat4::mat4(float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n, float o, float p)
 {
@@ -60,7 +57,7 @@ mat4 operator*(const mat4 & u, const mat4 & v)
 		);
 }
 
-mat4 makeCameraMatrix(vec3 camPos, vec3 camTar, vec3 upVec) {
+mat4 make_cam_mat(vec3 camPos, vec3 camTar, vec3 upVec) {
 	vec3 u = (camTar - camPos).normalize();
 	vec3 v = u.cross(upVec).normalize();
 	vec3 w = v.cross(u);
@@ -82,16 +79,16 @@ mat4 makeCameraMatrix(vec3 camPos, vec3 camTar, vec3 upVec) {
 	return n * m;
 }
 
-mat4 getRotY(float rotationAngle) {
+mat4 rotate_y_mat(float rotationAngle) {
 	return mat4(
-		cos(rotationAngle * M_PI / 180.0),	0.0,	sin(rotationAngle * M_PI / 180.0),	0.0,
-		0.0,								1.0,	0.0,								0.0,
-		-sin(rotationAngle * M_PI / 180.0), 0.0,	cos(rotationAngle * M_PI / 180.0),	0.0,
-		0.0,								0.0,	0.0,								1.0
+		cos(rotationAngle),	0.0, sin(rotationAngle), 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		-sin(rotationAngle), 0.0, cos(rotationAngle), 0.0,
+		0.0, 0.0, 0.0, 1.0
 		);
 }
 
-mat4 getTranslation(vec3 translation) {
+mat4 get_translation_mat(vec3 translation) {
 	return mat4(
 		1.0, 0.0, 0.0, translation.x,
 		0.0, 1.0, 0.0, translation.y,
@@ -122,6 +119,16 @@ mat4 scale_mat(float scaleFactor) {
 		scaleFactor, 0.0, 0.0, 0.0,
 		0.0, scaleFactor, 0.0, 0.0,
 		0.0, 0.0, scaleFactor, 0.0,
+		0.0, 0.0, 0.0, 1.0
+		);
+}
+
+mat4 identity_mat()
+{
+	return mat4(
+		1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
 		0.0, 0.0, 0.0, 1.0
 		);
 }

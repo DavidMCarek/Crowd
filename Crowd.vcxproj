@@ -151,8 +151,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="glUtils.cpp" />
-    <ClCompile Include="LoadObj.cpp" />
-    <ClCompile Include="LoadShaders.cpp" />
+    <ClCompile Include="loadObj.cpp" />
+    <ClCompile Include="loadShader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mat4.cpp" />
     <ClCompile Include="strUtils.cpp" />
@@ -165,8 +165,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="glUtils.h" />
-    <ClInclude Include="LoadObj.h" />
-    <ClInclude Include="LoadShaders.h" />
+    <ClInclude Include="loadObj.h" />
+    <ClInclude Include="loadShader.h" />
     <ClInclude Include="mat4.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="strUtils.h" />

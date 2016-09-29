@@ -1,11 +1,11 @@
 #include <stdio.h>
-#include "glUtils.h"
-#include "LoadShaders.h"
-#include "vec3.h"
-#include "mat4.h"
-#include "LoadObj.h"
 #include <vector>
 #include <algorithm>
+#include "glUtils.h"
+#include "loadShader.h"
+#include "vec3.h"
+#include "mat4.h"
+#include "loadObj.h"
 
 int g_gl_width = 640;
 int g_gl_height = 480;
@@ -14,7 +14,12 @@ std::string cows = "triangulatedCowDos.obj";
 std::string people = "Body_Mesh_Rigged.obj";
 std::string file = cows;
 
+float cam_sensitivity = 0.01;
+float cam_speed = 0.1;
+
 GLFWwindow* g_window = NULL;
+
+float bounds(float pos);
 
 int main() {
 	
@@ -61,8 +66,8 @@ int main() {
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray(1);
 
-	const char* vertex_shader = load_shaders_run(".\\vert.glsl");
-	const char* fragment_shader = load_shaders_run(".\\frag.glsl");
+	const char* vertex_shader = load_shader(".\\vert.glsl");
+	const char* fragment_shader = load_shader(".\\frag.glsl");
 
 	GLuint vs = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vs, 1, &vertex_shader, NULL);
@@ -81,13 +86,15 @@ int main() {
 	glUseProgram(shader_programme);
 	glBindVertexArray(plane_vao);
 
-	mat4 camMat = makeCameraMatrix(vec3(1, 1, 1), vec3(0, -1, 0), vec3(0, 1, 0));
+	vec3 cam_location = vec3(-1.0, 0.0, 0.0);
+	vec3 cam_target = vec3(1.0, M_PI_4 + M_PI_2, 0.0);
+	vec3 up = vec3(0, 1, 0);
+
+	mat4 camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
 
 	mat4 persMat4 = perspective_projection(67, (float)g_gl_width / g_gl_height, 0.1, 100);
 
 	GLuint persMat = glGetUniformLocation(shader_programme, "persMat");
-
-	glUniformMatrix4fv(persMat, 1, GL_TRUE, (persMat4 * camMat).mat);
 
 	GLuint color = glGetUniformLocation(shader_programme, "in_color");
 
@@ -127,14 +134,14 @@ int main() {
 	};
 
 	float entity_rotations[] = {
-		270.0,
-		30.0,
-		60.0
+		0,
+		M_2_PI,
+		M_PI
 	};
 
-	int entity = 1;
+	int entity = 0;
 
-	mat4 translation_mat1 = getTranslation(vec3(x, y, z));
+	mat4 translation_mat1 = get_translation_mat(vec3(x, y, z));
 
 	while (!glfwWindowShouldClose(g_window)) {
 		static double previous_seconds = glfwGetTime();
@@ -142,35 +149,32 @@ int main() {
 		double elapsed_seconds = current_seconds - previous_seconds;
 		previous_seconds = current_seconds;
 
-		_update_fps_counter(g_window);
+		update_fps_counter(g_window);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport(0, 0, g_gl_width, g_gl_height);
 
 		glUseProgram(shader_programme);
 
-		if (angle >= 360)
-			angle = 0.0;
+		glUniformMatrix4fv(persMat, 1, GL_TRUE, (persMat4 * camMat).mat);
 
-		angle += 0.5;
-
-		glUniformMatrix4fv(model_mat, 1, GL_TRUE, getRotY(angle).mat);
+		glUniformMatrix4fv(model_mat, 1, GL_TRUE, identity_mat().mat);
 
 		glUniform3f(color, 0.75, 0.75, 0.75);
 		glBindVertexArray(plane_vao);
 		glDrawArrays(GL_TRIANGLES, 0, pointCount);
 
-		glUniform3f(color, 0.75, 0.0, 0.75);
-		glUniformMatrix4fv(model_mat, 1, GL_TRUE, (getRotY(angle) * getTranslation(entity_positions[0]) * getRotY(entity_rotations[0]) * scale_mat(0.025)).mat);
+		glUniform3f(color, 0.75, 0.0, 0.0);
+		glUniformMatrix4fv(model_mat, 1, GL_TRUE, (get_translation_mat(entity_positions[0]) * rotate_y_mat(entity_rotations[0]) * scale_mat(0.05)).mat);
 		glBindVertexArray(entity_vao);
 		glDrawArrays(GL_TRIANGLES, 0, points.size());
 
-		glUniform3f(color, 0.75, 0.9, 0.75);
-		glUniformMatrix4fv(model_mat, 1, GL_TRUE, (getRotY(angle) * getTranslation(entity_positions[1]) * getRotY(entity_rotations[1]) * scale_mat(0.05)).mat);
+		glUniform3f(color, 0.0, 0.75, 0.0);
+		glUniformMatrix4fv(model_mat, 1, GL_TRUE, (get_translation_mat(entity_positions[1]) * rotate_y_mat(entity_rotations[1]) * scale_mat(0.05)).mat);
 		glBindVertexArray(entity_vao);
 		glDrawArrays(GL_TRIANGLES, 0, points.size());
 
-		glUniform3f(color, 0.5, 0.0, 0.75);
-		glUniformMatrix4fv(model_mat, 1, GL_TRUE, (getRotY(angle) * getTranslation(entity_positions[2]) * getRotY(entity_rotations[2]) * scale_mat(0.05)).mat);
+		glUniform3f(color, 0.0, 0.0, 0.75);
+		glUniformMatrix4fv(model_mat, 1, GL_TRUE, (get_translation_mat(entity_positions[2]) * rotate_y_mat(entity_rotations[2]) * scale_mat(0.05)).mat);
 		glBindVertexArray(entity_vao);
 		glDrawArrays(GL_TRIANGLES, 0, points.size());
 
@@ -180,33 +184,122 @@ int main() {
 			glfwSetWindowShouldClose(g_window, 1);
 		}
 
-		if (glfwGetKey(g_window, GLFW_KEY_D)) {
-			entity_positions[entity - 1].x = std::min(entity_positions[entity - 1].x + 0.01, 1.0);
-		}
-		if (glfwGetKey(g_window, GLFW_KEY_A)) {
-			entity_positions[entity - 1].x = std::max(entity_positions[entity - 1].x - 0.01, -1.0);
+		if (glfwGetKey(g_window, GLFW_KEY_S)) {
+			if (entity == 0) {
+				if (entity == 0) {
+					vec3 movement_vec = vec3(cam_speed, M_PI_2, cam_target.z);
+					cam_location = cam_location - to_cartesian(movement_vec);
+					camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
+				}
+			}
+			else {
+				entity_positions[entity - 1].x = entity_positions[entity - 1].x -
+					(cosf(entity_rotations[entity - 1]) * 0.01);
+
+				entity_positions[entity - 1].z = entity_positions[entity - 1].z + 
+					(sinf(entity_rotations[entity - 1]) * 0.01);
+
+				entity_positions[entity - 1].x = bounds(entity_positions[entity - 1].x);
+				entity_positions[entity - 1].z = bounds(entity_positions[entity - 1].z);
+			}
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_W)) {
-			entity_positions[entity - 1].z = std::min(entity_positions[entity - 1].z + 0.01, 1.0);
+			if (entity == 0) {
+				if (entity == 0) {
+					vec3 movement_vec = vec3(cam_speed, M_PI_2, cam_target.z);
+					cam_location = cam_location + to_cartesian(movement_vec);
+					camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
+				}
+			}
+			else {
+				entity_positions[entity - 1].x = entity_positions[entity - 1].x +
+					(cosf(entity_rotations[entity - 1]) * 0.01);
+
+				entity_positions[entity - 1].z = entity_positions[entity - 1].z -
+					(sinf(entity_rotations[entity - 1]) * 0.01);
+
+				entity_positions[entity - 1].x = bounds(entity_positions[entity - 1].x);
+				entity_positions[entity - 1].z = bounds(entity_positions[entity - 1].z);
+			}
 		}
-		if (glfwGetKey(g_window, GLFW_KEY_S)) {
-			entity_positions[entity - 1].z = std::max(entity_positions[entity - 1].z - 0.01, -1.0);
+		if (glfwGetKey(g_window, GLFW_KEY_D)) {
+			if (entity == 0) {
+				vec3 movement_vec = vec3(cam_speed, M_PI_2, cam_target.z + M_PI_2);
+				cam_location = cam_location + to_cartesian(movement_vec);
+				camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
+			}
+			else {
+				entity_rotations[entity - 1] -= M_PI * 0.01;
+				if (entity_rotations[entity - 1] < 0.0)
+					entity_rotations[entity - 1] = 2 * M_PI;
+			}
 		}
-		if (glfwGetKey(g_window, GLFW_KEY_UP)) {
-			entity_positions[entity - 1].y = std::min(entity_positions[entity - 1].y + 0.01, 1.0);
+		if (glfwGetKey(g_window, GLFW_KEY_A)) {
+			if (entity == 0) {
+				vec3 movement_vec = vec3(cam_speed, M_PI_2, cam_target.z - M_PI_2);
+				cam_location = cam_location + to_cartesian(movement_vec);
+				camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
+			}
+			else {
+				entity_rotations[entity - 1] += M_PI * 0.01;
+				if (entity_rotations[entity - 1] >= 2 * M_PI)
+					entity_rotations[entity - 1] = 0.0;
+			}
 		}
-		if (glfwGetKey(g_window, GLFW_KEY_DOWN)) {
-			entity_positions[entity - 1].y = std::max(entity_positions[entity - 1].y - 0.01, -1.0);
+		if (glfwGetKey(g_window, GLFW_KEY_SPACE)) {
+			if (entity == 0) {
+				cam_location.y += cam_speed;
+				camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
+			}
+			else {
+				entity_positions[entity - 1].y = std::min(entity_positions[entity - 1].y + 0.01, 1.0);
+			}
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_LEFT_SHIFT)) {
+			if (entity == 0) {
+				cam_location.y -= cam_speed;
+				camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
+			}
+			else {
+				entity_positions[entity - 1].y = std::max(entity_positions[entity - 1].y - 0.01, -1.0);
+			}
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_LEFT)) {
-			entity_rotations[entity - 1] += 2.0;
-			if (entity_rotations[entity - 1] >= 360.0)
-				entity_rotations[entity - 1] = 0.0;
+			if (entity == 0) {
+				cam_target.z -= M_PI * cam_sensitivity;
+				if (cam_target.z < 0.0)
+					cam_target.z = 2 * M_PI;
+
+				camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
+			}
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_RIGHT)) {
-			entity_rotations[entity - 1] -= 2.0;
-			if (entity_rotations[entity - 1] <= 0.0)
-				entity_rotations[entity - 1] = 360.0;
+			if (entity == 0) {
+				cam_target.z += M_PI * cam_sensitivity;
+				if (cam_target.z >= 2 * M_PI)
+					cam_target.z = 0.0;
+				camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
+			}
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_DOWN)) {
+			if (entity == 0) {
+				cam_target.y += M_PI * cam_sensitivity;
+				if (cam_target.y >= M_PI - (M_PI / 64))
+					cam_target.y = M_PI - (M_PI / 64);
+
+				camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
+			}
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_UP)) {
+			if (entity == 0) {
+				cam_target.y -= M_PI * cam_sensitivity;
+				if (cam_target.y < (M_PI / 64))
+					cam_target.y = (M_PI / 64);
+				camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
+			}
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_0)) {
+			entity = 0;
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_1)) {
 			entity = 1;
@@ -224,4 +317,12 @@ int main() {
 
 	glfwTerminate();
 	return 0;
+}
+
+float bounds(float pos) {
+	if (pos > 1.0)
+		return 1.0;
+	if (pos < -1.0)
+		return -1.0;
+	return pos;
 }

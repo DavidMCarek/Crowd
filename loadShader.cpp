@@ -1,6 +1,6 @@
-#include "LoadShaders.h"
+#include "loadShader.h"
 
-char* load_shaders_run(std::string file) {
+char* load_shader(std::string file) {
 	std::ifstream shader;
 
 	shader.open(file, std::ios::binary);

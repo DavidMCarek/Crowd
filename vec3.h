@@ -1,4 +1,9 @@
 #pragma once
+
+#define _USE_MATH_DEFINES
+
+#include <math.h>
+
 class vec3
 {
 public:
@@ -14,3 +19,7 @@ public:
 };
 
 vec3 operator-(const vec3 &u, const vec3 &v);
+vec3 operator+(const vec3 &u, const vec3 &v);
+
+vec3 to_sphereical(vec3 vec);
+vec3 to_cartesian(vec3 vec);

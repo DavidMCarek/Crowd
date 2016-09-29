@@ -15,7 +15,15 @@ std::string people = "Body_Mesh_Rigged.obj";
 std::string file = cows;
 
 float cam_sensitivity = 0.01;
-float cam_speed = 0.1;
+float cam_speed = 0.05;
+float entity_sensitivity = 0.025;
+float entity_speed = 0.05;
+float upper_map_bound = 10.0;
+float lower_map_bound = -10.0;
+float max_height = 1.0;
+float min_height = 0.0;
+float base_terrain_height = 0.0;
+int entity_count = 30; // 1 to 9
 
 GLFWwindow* g_window = NULL;
 
@@ -29,12 +37,12 @@ int main() {
 	glDepthFunc(GL_LESS);
 
 	float plane[] = {
-		-1.0, -1.0, -1.0,
-		1.0, -1.0, -1.0,
-		1.0, -1.0, 1.0,
-		-1.0, -1.0, -1.0,
-		1.0, -1.0, 1.0,
-		-1.0, -1.0, 1.0
+		lower_map_bound, base_terrain_height, lower_map_bound,
+		upper_map_bound, base_terrain_height, lower_map_bound,
+		upper_map_bound, base_terrain_height, upper_map_bound,
+		lower_map_bound, base_terrain_height, lower_map_bound,
+		upper_map_bound, base_terrain_height, upper_map_bound,
+		lower_map_bound, base_terrain_height, upper_map_bound
 	};
 
 	float plane_n[] = {
@@ -86,7 +94,7 @@ int main() {
 	glUseProgram(shader_programme);
 	glBindVertexArray(plane_vao);
 
-	vec3 cam_location = vec3(-1.0, 0.0, 0.0);
+	vec3 cam_location = vec3(-1.0, 1.0, 0.0);
 	vec3 cam_target = vec3(1.0, M_PI_4 + M_PI_2, 0.0);
 	vec3 up = vec3(0, 1, 0);
 
@@ -124,20 +132,27 @@ int main() {
 	float angle = 0.0;
 
 	float x = 0.0;
-	float y = -0.82;
+	float y = base_terrain_height + 0.16;
 	float z = 0.0;
 
-	vec3 entity_positions[] = {
-		vec3(x, y, z),
-		vec3(x + 0.5, y, z + 0.5),
-		vec3(x - 0.5, y, z + 0.5)
-	};
+	std::vector<vec3> entity_positions;
 
-	float entity_rotations[] = {
-		0,
-		M_2_PI,
-		M_PI
-	};
+	for (int i = 1; i <= entity_count; i++) {
+		if (i % 2 == 0) 
+			entity_positions.push_back(vec3(x, y, z + (i / 2 * 0.5)));
+		else 
+			entity_positions.push_back(vec3(x, y, z - (i / 2 * 0.5)));
+	}
+
+	std::vector<float> entity_rotations;
+	for (int i = 0; i < entity_count; i++) {
+		entity_rotations.push_back(0.0);
+	}
+
+	std::vector<vec3> entity_colors;
+	for (int i = 0; i < entity_count; i++) {
+		entity_colors.push_back(vec3((rand() % 7892347) / 7892347.0 * 255.0, (rand() % 7892347) / 7892347.0 * 255.0, (rand() % 7892347) / 7892347.0 * 255.0));
+	}
 
 	int entity = 0;
 
@@ -163,20 +178,12 @@ int main() {
 		glBindVertexArray(plane_vao);
 		glDrawArrays(GL_TRIANGLES, 0, pointCount);
 
-		glUniform3f(color, 0.75, 0.0, 0.0);
-		glUniformMatrix4fv(model_mat, 1, GL_TRUE, (get_translation_mat(entity_positions[0]) * rotate_y_mat(entity_rotations[0]) * scale_mat(0.05)).mat);
-		glBindVertexArray(entity_vao);
-		glDrawArrays(GL_TRIANGLES, 0, points.size());
-
-		glUniform3f(color, 0.0, 0.75, 0.0);
-		glUniformMatrix4fv(model_mat, 1, GL_TRUE, (get_translation_mat(entity_positions[1]) * rotate_y_mat(entity_rotations[1]) * scale_mat(0.05)).mat);
-		glBindVertexArray(entity_vao);
-		glDrawArrays(GL_TRIANGLES, 0, points.size());
-
-		glUniform3f(color, 0.0, 0.0, 0.75);
-		glUniformMatrix4fv(model_mat, 1, GL_TRUE, (get_translation_mat(entity_positions[2]) * rotate_y_mat(entity_rotations[2]) * scale_mat(0.05)).mat);
-		glBindVertexArray(entity_vao);
-		glDrawArrays(GL_TRIANGLES, 0, points.size());
+		for (int i = 0; i < entity_count; i++) {
+			glUniform3f(color, entity_colors[i].x, entity_colors[i].y, entity_colors[i].z);
+			glUniformMatrix4fv(model_mat, 1, GL_TRUE, (get_translation_mat(entity_positions[i]) * rotate_y_mat(entity_rotations[i]) * scale_mat(0.05)).mat);
+			glBindVertexArray(entity_vao);
+			glDrawArrays(GL_TRIANGLES, 0, points.size());
+		}
 
 		glfwPollEvents();
 
@@ -194,10 +201,10 @@ int main() {
 			}
 			else {
 				entity_positions[entity - 1].x = entity_positions[entity - 1].x -
-					(cosf(entity_rotations[entity - 1]) * 0.01);
+					(cosf(entity_rotations[entity - 1]) * entity_speed);
 
 				entity_positions[entity - 1].z = entity_positions[entity - 1].z + 
-					(sinf(entity_rotations[entity - 1]) * 0.01);
+					(sinf(entity_rotations[entity - 1]) * entity_speed);
 
 				entity_positions[entity - 1].x = bounds(entity_positions[entity - 1].x);
 				entity_positions[entity - 1].z = bounds(entity_positions[entity - 1].z);
@@ -213,10 +220,10 @@ int main() {
 			}
 			else {
 				entity_positions[entity - 1].x = entity_positions[entity - 1].x +
-					(cosf(entity_rotations[entity - 1]) * 0.01);
+					(cosf(entity_rotations[entity - 1]) * entity_speed);
 
 				entity_positions[entity - 1].z = entity_positions[entity - 1].z -
-					(sinf(entity_rotations[entity - 1]) * 0.01);
+					(sinf(entity_rotations[entity - 1]) * entity_speed);
 
 				entity_positions[entity - 1].x = bounds(entity_positions[entity - 1].x);
 				entity_positions[entity - 1].z = bounds(entity_positions[entity - 1].z);
@@ -229,7 +236,7 @@ int main() {
 				camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
 			}
 			else {
-				entity_rotations[entity - 1] -= M_PI * 0.01;
+				entity_rotations[entity - 1] -= M_PI * entity_sensitivity;
 				if (entity_rotations[entity - 1] < 0.0)
 					entity_rotations[entity - 1] = 2 * M_PI;
 			}
@@ -241,7 +248,7 @@ int main() {
 				camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
 			}
 			else {
-				entity_rotations[entity - 1] += M_PI * 0.01;
+				entity_rotations[entity - 1] += M_PI * entity_sensitivity;
 				if (entity_rotations[entity - 1] >= 2 * M_PI)
 					entity_rotations[entity - 1] = 0.0;
 			}
@@ -252,7 +259,7 @@ int main() {
 				camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
 			}
 			else {
-				entity_positions[entity - 1].y = std::min(entity_positions[entity - 1].y + 0.01, 1.0);
+				entity_positions[entity - 1].y = std::min(entity_positions[entity - 1].y + entity_speed, max_height);
 			}
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_LEFT_SHIFT)) {
@@ -261,7 +268,7 @@ int main() {
 				camMat = make_cam_mat(cam_location, to_cartesian(cam_target) + cam_location, up);
 			}
 			else {
-				entity_positions[entity - 1].y = std::max(entity_positions[entity - 1].y - 0.01, -1.0);
+				entity_positions[entity - 1].y = std::max(entity_positions[entity - 1].y - entity_speed, min_height);
 			}
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_LEFT)) {
@@ -310,6 +317,24 @@ int main() {
 		if (glfwGetKey(g_window, GLFW_KEY_3)) {
 			entity = 3;
 		}
+		if (glfwGetKey(g_window, GLFW_KEY_4)) {
+			entity = 4;
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_5)) {
+			entity = 5;
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_6)) {
+			entity = 6;
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_7)) {
+			entity = 7;
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_8)) {
+			entity = 8;
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_9)) {
+			entity = 9;
+		}
 
 		glfwSwapBuffers(g_window);
 	}
@@ -320,9 +345,9 @@ int main() {
 }
 
 float bounds(float pos) {
-	if (pos > 1.0)
-		return 1.0;
-	if (pos < -1.0)
-		return -1.0;
+	if (pos > upper_map_bound)
+		return upper_map_bound;
+	if (pos < lower_map_bound)
+		return lower_map_bound;
 	return pos;
 }

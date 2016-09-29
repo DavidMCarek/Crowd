@@ -18,12 +18,12 @@ float cam_sensitivity = 0.01;
 float cam_speed = 0.05;
 float entity_sensitivity = 0.025;
 float entity_speed = 0.05;
-float upper_map_bound = 10.0;
-float lower_map_bound = -10.0;
+float upper_map_bound = 20.0;
+float lower_map_bound = 0.0;
 float max_height = 1.0;
 float min_height = 0.0;
 float base_terrain_height = 0.0;
-int entity_count = 30; // 1 to 9
+int entity_count = 400; // 1 to 9
 
 GLFWwindow* g_window = NULL;
 
@@ -137,11 +137,8 @@ int main() {
 
 	std::vector<vec3> entity_positions;
 
-	for (int i = 1; i <= entity_count; i++) {
-		if (i % 2 == 0) 
-			entity_positions.push_back(vec3(x, y, z + (i / 2 * 0.5)));
-		else 
-			entity_positions.push_back(vec3(x, y, z - (i / 2 * 0.5)));
+	for (int i = 0; i < entity_count; i++) {
+		entity_positions.push_back(vec3(x + (i / 20), y, z + (i % 20)));
 	}
 
 	std::vector<float> entity_rotations;

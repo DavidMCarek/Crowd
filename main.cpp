@@ -7,8 +7,8 @@
 #include "mat4.h"
 #include "loadObj.h"
 
-int g_gl_width = 640;
-int g_gl_height = 480;
+int g_gl_width = 1200;
+int g_gl_height = 880;
 
 std::string cows = "triangulatedCowDos.obj";
 std::string people = "Body_Mesh_Rigged.obj";
@@ -23,7 +23,7 @@ float lower_map_bound = 0.0;
 float max_height = 1.0;
 float min_height = 0.0;
 float base_terrain_height = 0.0;
-int entity_count = 400; // 1 to 9
+int entity_count = 9; // 1 to 9
 
 GLFWwindow* g_window = NULL;
 
